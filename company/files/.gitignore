@@ -1,0 +1,6 @@
+# Optional: ignore uploaded files by extension if you don't want them in git
+# *.jpg
+# *.png
+# *.pdf
+*.log
+.DS_Store

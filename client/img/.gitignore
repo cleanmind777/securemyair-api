@@ -1,0 +1,3 @@
+# Local/temp (keep tracked images; ignore generated)
+*.log
+.DS_Store

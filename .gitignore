@@ -1,0 +1,26 @@
+# PHP
+vendor/
+composer.lock
+*.phar
+
+# Environment and config (keep secrets out of repo)
+.env
+.env.*
+config.local.php
+
+# Uploads and user content (optional: uncomment if uploads should not be committed)
+# uploads/
+# company/files/*.jpg
+# company/files/*.png
+
+# Logs and cache
+*.log
+logs/
+cache/
+tmp/
+temp/
+
+# IDE and OS
+.idea/
+.vscode/
+.DS_Store
