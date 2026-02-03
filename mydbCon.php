@@ -1,11 +1,8 @@
 <?php
-    $dbCon = mysqli_connect(
-        'localhost',
-        '$m@Rt&c0oK!3',
-        'a4Bqc!Nk@Dj8dyUA',
-        'plc'
-    );
-    // echo $dbCon;
-    // echo var_export($dbCon, true);
+    $dbHost = getenv('DB_HOST') ?: 'localhost';
+    $dbUser = getenv('DB_USER') ?: 'plc_user';
+    $dbPass = getenv('DB_PASS') ?: '';
+    $dbName = getenv('DB_NAME') ?: 'plc';
 
+    $dbCon = mysqli_connect($dbHost, $dbUser, $dbPass, $dbName);
 ?>

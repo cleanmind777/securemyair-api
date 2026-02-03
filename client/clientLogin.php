@@ -9,7 +9,7 @@ require_once "../_components/phpmailer/SMTP.php";
 $mail = new PHPMailer(true);
 include ('../jwt.php');
 $arr = [];
-$SECRET_KEY = 'e%^)urD$RS7QxcsP]p4zm42A7!i[x35YJ](gJKz9qRaMk#B&hH';
+$SECRET_KEY = getenv('JWT_SECRET') ?: 'e%^)urD$RS7QxcsP]p4zm42A7!i[x35YJ](gJKz9qRaMk#B&hH';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['email'])) {
         $emailInput = $_POST['email'];
