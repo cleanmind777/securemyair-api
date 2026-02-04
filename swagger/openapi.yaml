@@ -36,7 +36,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT from login.php (header: Authorization)
+      description: "JWT from login.php (header: Authorization)"
   parameters:
     machineApi:
       name: api
