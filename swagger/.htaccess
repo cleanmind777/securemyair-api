@@ -1,0 +1,4 @@
+# Serve OpenAPI YAML with correct type for Swagger UI
+<FilesMatch "\.(yaml|yml)$">
+  Header set Content-Type "application/x-yaml"
+</FilesMatch>

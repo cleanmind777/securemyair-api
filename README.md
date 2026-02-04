@@ -244,6 +244,16 @@ Good for local development without Apache.
 
 Protected endpoints use `auth.php` and expect a JWT in the `Authorization` header.
 
+### Swagger (API documentation)
+
+To browse and test the API like Swagger:
+
+1. Open **`/swagger/`** in your browser (e.g. `http://localhost:8080/swagger/` or `https://your-droplet.com/swagger/`).
+2. Use **Authorize** and paste your JWT (from `login.php`) as `Bearer <token>`.
+3. Try any endpoint from the list.
+
+The spec is in `swagger/openapi.yaml`; the UI is in `swagger/index.html` (Swagger UI from CDN).
+
 ---
 
 ## Security notes

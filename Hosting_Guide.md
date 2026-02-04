@@ -306,3 +306,17 @@ Test in browser: **https://api.yourdomain.com**
 | By domain (HTTP) | `http://api.yourdomain.com` |
 | By domain (HTTPS) | `https://api.yourdomain.com` |
 
+---
+
+## 11. API docs (Swagger)
+
+To manage and test the API with Swagger UI on your Droplet:
+
+1. Open in your browser:
+   - **By IP:** `http://YOUR_DROPLET_IP/swagger/`
+   - **By domain:** `https://api.yourdomain.com/swagger/`
+2. Click **Authorize**, then enter your JWT as `Bearer <your_token>` (get the token from `POST /login.php`).
+3. Use the listed endpoints to try requests.
+
+The OpenAPI spec is in `swagger/openapi.yaml`; the UI is static HTML (Swagger UI loaded from CDN). No extra Nginx config is needed if the app root is the project folder.
+

@@ -1,0 +1,544 @@
+openapi: 3.0.3
+info:
+  title: SecureMyAir API
+  description: |
+    PHP backend API for **SecureMyAir** – air quality and machine monitoring.
+    Use **Authorize** to set your JWT (from `/login.php`) for protected endpoints.
+  version: 1.0.0
+  contact:
+    name: SecureMyAir / redapple
+
+servers:
+  - url: /
+    description: Current host (Droplet or local)
+  - url: https://your-droplet-domain.com
+    description: Production Droplet (replace with your domain or IP)
+
+tags:
+  - name: Auth
+    description: Login and password reset
+  - name: Dashboard
+    description: Machine metrics and display data
+  - name: Customers
+    description: Customer CRUD
+  - name: Machines
+    description: Machine CRUD and listing
+  - name: Profile & System
+    description: Profile, relays, indoor/outdoor
+  - name: Reporting & Errors
+    description: Reports, values, error history
+  - name: Upload
+    description: Chunked file upload
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT from login.php (header: Authorization)
+  parameters:
+    machineApi:
+      name: api
+      in: query
+      required: true
+      description: Machine API token
+      schema:
+        type: string
+    customerId:
+      name: cid
+      in: query
+      description: Customer ID
+      schema:
+        type: integer
+
+paths:
+  /login.php:
+    post:
+      tags: [Auth]
+      summary: Admin login
+      description: Returns JWT (or 2FA email step). Use `no2fa=1` to skip 2FA and get token directly.
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                username: { type: string }
+                password: { type: string }
+                no2fa: { type: string, enum: ['1'], description: 'Skip 2FA, return token' }
+                code: { type: string, description: '2FA code (after email step)' }
+                codeEmail: { type: string, description: 'Email for 2FA step' }
+      responses:
+        '200':
+          description: Success (res, token, name, id) or 2FA required (res, email)
+  /reset.php:
+    post:
+      tags: [Auth]
+      summary: Admin password reset
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                code: { type: string }
+                codeEmail: { type: string }
+                password: { type: string }
+                passEmail: { type: string }
+      responses:
+        '200':
+          description: Result (res = true/false or message)
+
+  /dashboard.php:
+    get:
+      tags: [Dashboard]
+      summary: Machine dashboard data
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/machineApi'
+      responses:
+        '200':
+          description: Humidity, AQI, VOC, CO2, PM2.5, PM10, CO, temp, fan/UVC/OSA/CH status, customer, machine, date
+
+  /customers.php:
+    get:
+      tags: [Customers]
+      summary: List all customers
+      responses:
+        '200':
+          description: Array of customers (id, name, email, phone, cName, cId, cEmail)
+  /addCustomer.php:
+    post:
+      tags: [Customers]
+      summary: Add customer
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [name, email, phone, pwd, companyName, companyEmail, companyId, companyPwd]
+              properties:
+                name: { type: string }
+                email: { type: string }
+                phone: { type: string }
+                pwd: { type: string }
+                companyName: { type: string }
+                companyEmail: { type: string }
+                companyId: { type: string }
+                companyPwd: { type: string }
+      responses:
+        '200':
+          description: res = 'true' or error message
+  /editCustomer.php:
+    post:
+      tags: [Customers]
+      summary: Edit customer
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                id: { type: integer }
+                name: { type: string }
+                email: { type: string }
+                phone: { type: string }
+                companyName: { type: string }
+                companyEmail: { type: string }
+                companyId: { type: string }
+      responses:
+        '200':
+          description: Result
+  /delCustomer.php:
+    post:
+      tags: [Customers]
+      summary: Delete customer
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                id: { type: integer }
+      responses:
+        '200':
+          description: Result
+
+  /machines.php:
+    get:
+      tags: [Machines]
+      summary: List machines
+      parameters:
+        - $ref: '#/components/parameters/customerId'
+      responses:
+        '200':
+          description: Array of machines (id, name, apiToken, cid, cName, location, date)
+  /addMachine.php:
+    post:
+      tags: [Machines]
+      summary: Add machine
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                location: { type: string }
+                customerId: { type: integer }
+                apiToken: { type: string }
+      responses:
+        '200':
+          description: Result
+  /editMachine.php:
+    post:
+      tags: [Machines]
+      summary: Edit machine
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                id: { type: integer }
+                name: { type: string }
+                location: { type: string }
+                customerId: { type: integer }
+      responses:
+        '200':
+          description: Result
+  /delMachine.php:
+    post:
+      tags: [Machines]
+      summary: Delete machine
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                id: { type: integer }
+      responses:
+        '200':
+          description: Result
+
+  /secureCustomers.php:
+    get:
+      tags: [Customers]
+      summary: Secure customers list (JWT)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/customerId'
+      responses:
+        '200':
+          description: Customer(s) data
+  /secureMachines.php:
+    get:
+      tags: [Machines]
+      summary: Secure machines list (JWT)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/customerId'
+      responses:
+        '200':
+          description: Machine(s) data
+
+  /profile.php:
+    get:
+      tags: [Profile & System]
+      summary: Get profile
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: query
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Profile data
+    post:
+      tags: [Profile & System]
+      summary: Update profile
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                id: { type: integer }
+                FullName: { type: string }
+                email: { type: string }
+      responses:
+        '200':
+          description: Result
+
+  /relays.php:
+    get:
+      tags: [Profile & System]
+      summary: Relay status/control
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/machineApi'
+        - name: relay
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Relay data
+  /system.php:
+    get:
+      tags: [Profile & System]
+      summary: System data by machine API
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/machineApi'
+      responses:
+        '200':
+          description: System info
+    post:
+      tags: [Profile & System]
+      summary: System control (start/end/sot/tvoc/pm10/pm25/co2)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                start: { type: string }
+                end: { type: string }
+                sot: { type: string }
+                tvoc: { type: string }
+                pm10: { type: string }
+                pm25: { type: string }
+                co2: { type: string }
+      responses:
+        '200':
+          description: Result
+  /indoor.php:
+    get:
+      tags: [Profile & System]
+      summary: Indoor data
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/machineApi'
+      responses:
+        '200':
+          description: Indoor metrics
+  /outdoor.php:
+    get:
+      tags: [Profile & System]
+      summary: Outdoor data
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/machineApi'
+      responses:
+        '200':
+          description: Outdoor metrics
+
+  /fieldHistory.php:
+    get:
+      tags: [Reporting & Errors]
+      summary: Field history
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/customerId'
+        - name: file
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: History data
+  /reportings/reports.php:
+    get:
+      tags: [Reporting & Errors]
+      summary: Reports
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/machineApi'
+        - name: fromDate
+          in: query
+          schema: { type: string }
+        - name: toDate
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Report data
+  /reportings/values.php:
+    get:
+      tags: [Reporting & Errors]
+      summary: Reporting values
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/machineApi'
+      responses:
+        '200':
+          description: Values
+  /errors/history.php:
+    get:
+      tags: [Reporting & Errors]
+      summary: Error history
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/customerId'
+        - name: clear
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Error history
+  /errors/log.php:
+    get:
+      tags: [Reporting & Errors]
+      summary: Error log
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/customerId'
+        - name: isMachines
+          in: query
+          schema: { type: string }
+        - name: ack
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Log data
+
+  /upload_chunk.php:
+    post:
+      tags: [Upload]
+      summary: Upload file chunk or finalize
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+                fileId: { type: string }
+                chunkIndex: { type: integer }
+                totalChunks: { type: integer }
+                fileName: { type: string }
+                fileSize: { type: integer }
+                to_library: { type: integer }
+      responses:
+        '200':
+          description: success, chunk index or error
+    get:
+      tags: [Upload]
+      summary: Finalize chunked upload
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: action
+          in: query
+          required: true
+          schema: { type: string, enum: [finalize] }
+        - name: fileId
+          in: query
+          required: true
+          schema: { type: string }
+        - name: fileName
+          in: query
+          schema: { type: string }
+        - name: fileSize
+          in: query
+          schema: { type: integer }
+        - name: to_library
+          in: query
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Final file path or error
+
+  /inspection.php:
+    get:
+      tags: [Machines]
+      summary: Inspection by machine API
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/machineApi'
+      responses:
+        '200':
+          description: Inspection data
+    post:
+      tags: [Machines]
+      summary: Set inspection date
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                api: { type: string }
+                date: { type: string }
+      responses:
+        '200':
+          description: Result
+
+  /client/miniMachines.php:
+    get:
+      tags: [Machines]
+      summary: Client mini machines (JWT)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/customerId'
+      responses:
+        '200':
+          description: Machines list
+
+  /gaes/login.php:
+    post:
+      tags: [Auth]
+      summary: GAES login
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                username: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: res, id
+  /inspector/login.php:
+    post:
+      tags: [Auth]
+      summary: Inspector login
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                username: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: res, id
+  /operator/login.php:
+    post:
+      tags: [Auth]
+      summary: Operator login
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                username: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: res, id
