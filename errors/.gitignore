@@ -1,4 +1,0 @@
-# Log files (do not commit runtime logs)
-*.log
-logs/
-.DS_Store

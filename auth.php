@@ -1,7 +1,7 @@
 <?php
 
 include('jwt.php');
-$SECRET_KEY='e%^)urD$RS7QxcsP]p4zm42A7!i[x35YJ](gJKz9qRaMk#B&hH';
+$SECRET_KEY = getenv('JWT_SECRET') ?: 'e%^)urD$RS7QxcsP]p4zm42A7!i[x35YJ](gJKz9qRaMk#B&hH';
 $arr=[];
 $headers = getallheaders();
 $token = $headers['Authorization'];

@@ -10,7 +10,7 @@ PHP backend API for **SecureMyAir** ? air quality and machine monitoring. It pro
 - **MySQL** (database `plc`)
 - **JWT** for API auth
 - **PHPMailer** for email (2FA, password reset)
-- **Apache** (recommended) or PHP built-in server
+- **Apache** or **Nginx** (production), or PHP built-in server (development)
 
 ---
 
@@ -20,7 +20,7 @@ PHP backend API for **SecureMyAir** ? air quality and machine monitoring. It pro
 |------------|---------|
 | PHP       | 7.4+    |
 | MySQL     | 5.7+    |
-| Web server| Apache 2.4+ or PHP CLI |
+| Web server| Apache 2.4+, Nginx, or PHP CLI |
 
 **PHP extensions:** `mysqli`, `json`, `openssl`, `mbstring`
 
@@ -90,7 +90,107 @@ If you use 2FA or password reset, configure SMTP in the login/reset scripts that
 
 ---
 
-### Option B: PHP built-in server (Windows & Linux)
+### Option B: Nginx on Ubuntu (deployment)
+
+1. **Install Nginx, PHP-FPM, and MySQL:**
+
+   ```bash
+   sudo apt update
+   sudo apt install nginx php-fpm php-mysql php-mysqli php-mbstring php-json php-xml mysql-server
+   ```
+
+2. **Set PHP upload limits** (to match the app’s 50M uploads). Edit the PHP-FPM pool config or a custom `php.ini`:
+
+   ```bash
+   # Find the php.ini used by PHP-FPM (e.g. PHP 8.1)
+   php -i | grep "Loaded Configuration File"
+
+   # Edit it (path may be /etc/php/8.1/fpm/php.ini)
+   sudo nano /etc/php/8.1/fpm/php.ini
+   ```
+
+   Set or uncomment:
+
+   ```ini
+   upload_max_filesize = 50M
+   post_max_size = 50M
+   max_execution_time = 300
+   memory_limit = 256M
+   max_input_time = 300
+   ```
+
+   Restart PHP-FPM:
+
+   ```bash
+   sudo systemctl restart php8.1-fpm
+   ```
+
+3. **Deploy the project** (e.g. under `/var/www`):
+
+   ```bash
+   sudo mkdir -p /var/www/securemyair-api
+   sudo chown $USER:$USER /var/www/securemyair-api
+   # Copy or clone your project into /var/www/securemyair-api
+   cp -r /path/to/api/* /var/www/securemyair-api/
+   ```
+
+4. **Create an Nginx site config:**
+
+   ```bash
+   sudo nano /etc/nginx/sites-available/securemyair-api
+   ```
+
+   Paste (adjust `server_name` and `root` if needed):
+
+   ```nginx
+   server {
+       listen 80;
+       server_name your-domain.com;   # or your server IP
+       root /var/www/securemyair-api;
+       index index.php index.html;
+
+       client_max_body_size 50M;
+
+       location / {
+           try_files $uri $uri/ /index.php?$query_string;
+       }
+
+       location ~ \.php$ {
+           include snippets/fastcgi-php.conf;
+           fastcgi_pass unix:/run/php/php8.1-fpm.sock;
+           fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+           include fastcgi_params;
+           fastcgi_read_timeout 300;
+       }
+
+       location ~ /\.ht {
+           deny all;
+       }
+   }
+   ```
+
+   **Note:** If your PHP version is not 8.1, change `php8.1-fpm` and the socket path (e.g. `php8.2-fpm.sock`). List sockets with: `ls /run/php/`.
+
+5. **Enable the site and reload Nginx:**
+
+   ```bash
+   sudo ln -s /etc/nginx/sites-available/securemyair-api /etc/nginx/sites-enabled/
+   sudo nginx -t
+   sudo systemctl reload nginx
+   ```
+
+6. **Set permissions** so Nginx can read files and PHP-FPM can write if needed (e.g. uploads):
+
+   ```bash
+   sudo chown -R www-data:www-data /var/www/securemyair-api
+   sudo chmod -R 755 /var/www/securemyair-api
+   ```
+
+7. Open **http://your-domain.com** (or your server IP). For HTTPS, add a certificate (e.g. `certbot` with Let’s Encrypt).
+
+---
+
+### Option C: PHP built-in server (Windows & Linux)
 
 Good for local development without Apache.
 
@@ -112,18 +212,19 @@ Good for local development without Apache.
 
 2. Open: **http://localhost:8080**
 
-**Note:** The built-in server does not read `.htaccess`. Upload size limits are from `php.ini` (`upload_max_filesize`, `post_max_size`). For production, use Apache (or Nginx + PHP-FPM).
+**Note:** The built-in server does not read `.htaccess`. Upload size limits are from `php.ini` (`upload_max_filesize`, `post_max_size`). For production, use Apache or Nginx + PHP-FPM.
 
 ---
 
 ## Quick reference: run commands
 
-| OS      | Command (in project root)     | URL                  |
-|---------|-------------------------------|----------------------|
-| Windows | `php -S localhost:8080`       | http://localhost:8080 |
-| Linux   | `php -S localhost:8080`       | http://localhost:8080 |
-| Windows | Apache via XAMPP/WAMP         | http://localhost/api |
-| Linux   | Apache in `/var/www/html/api`| http://localhost/api |
+| OS      | Method                          | URL / note                    |
+|---------|----------------------------------|-------------------------------|
+| Windows | `php -S localhost:8080`         | http://localhost:8080         |
+| Linux   | `php -S localhost:8080`         | http://localhost:8080         |
+| Windows | Apache (XAMPP/WAMP)             | http://localhost/api          |
+| Linux   | Apache in `/var/www/html/api`   | http://localhost/api          |
+| Ubuntu  | Nginx + PHP-FPM                 | http://your-domain.com (see Option B above) |
 
 ---
 

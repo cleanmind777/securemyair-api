@@ -10,7 +10,7 @@ $mail = new PHPMailer(true);
 include ('mydbCon.php');
 include ('jwt.php');
 $arr = [];
-$SECRET_KEY = 'e%^)urD$RS7QxcsP]p4zm42A7!i[x35YJ](gJKz9qRaMk#B&hH';
+$SECRET_KEY = getenv('JWT_SECRET') ?: 'e%^)urD$RS7QxcsP]p4zm42A7!i[x35YJ](gJKz9qRaMk#B&hH';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST')
 {
