@@ -9,8 +9,11 @@ info:
     name: SecureMyAir / redapple
 
 servers:
+  # Relative to this spec: when loaded from .../swagger/openapi.yaml, ".." = API root (works for localhost/securemyair-api and similar)
+  - url: ".."
+    description: API root (relative to this document)
   - url: /
-    description: Current host (Droplet or local)
+    description: Root of current host (if API is at document root)
   - url: https://your-droplet-domain.com
     description: Production Droplet (replace with your domain or IP)
 
