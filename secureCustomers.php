@@ -1,8 +1,12 @@
 <?php
     header('Access-Control-Allow-Origin: *');
-    header('Access-Control-Allow-Headers: access');
-    header('Access-Control-Allow-Headers: Authorization');
-    header('Access-Control-Allow-Methods: POST, GET');
+    header('Access-Control-Allow-Headers: access, Authorization, Content-Type');
+    header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
+    header('Access-Control-Max-Age: 86400');
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        http_response_code(204);
+        exit;
+    }
     include('mydbCon.php');
     include('auth.php');
     $arr = array([]);

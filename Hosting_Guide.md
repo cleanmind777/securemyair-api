@@ -326,6 +326,18 @@ The OpenAPI spec is in `swagger/openapi.yaml`; the UI is static HTML (Swagger UI
 
 When some requests fail on the Droplet, check the following in order.
 
+### Quick: 500 when testing login via Swagger
+
+1. **SSH into the Droplet:** `ssh root@YOUR_DROPLET_IP`
+2. **See the PHP error** (choose one):
+   - **If you set up app logging (section 12.4):**  
+     `sudo tail -f /var/www/securemyair-api/logs/php_errors.log`  
+     Then trigger login again in Swagger; the error message and line number will appear.
+   - **Otherwise use PHP‑FPM log:**  
+     `sudo tail -f /var/log/php8.1-fpm.log` (or `php8.2-fpm.log` / `php-fpm.log` depending on version).
+3. **Optional – Nginx:** `sudo tail -f /var/log/nginx/error.log` for upstream/PHP errors.
+4. Fix the cause (often: missing `.env`, wrong DB credentials, or missing `logs/` + `.user.ini`).
+
 ### 12.1 SSH into the Droplet
 
 ```bash
@@ -427,4 +439,5 @@ Look at the last column (status code) and the request path.
 - **500** – PHP fatal error or uncaught exception; see `php_errors.log` or PHP‑FPM log.
 - **401 / “Expired token”** – JWT expired or wrong; use a fresh token from `login.php`.
 - **Database errors** – Wrong `.env` / DB credentials or missing tables; message often appears in `php_errors.log` or in the API response body.
+- **CORS (blocked from admin.securemyair.com)** – Browser sends an OPTIONS preflight first; the API must respond with 2xx and CORS headers without running auth. Endpoints that don’t use `headers.php` (e.g. `secureCustomers.php`, `secureMachines.php`) handle OPTIONS at the top and then exit.
 
