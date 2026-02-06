@@ -1,0 +1,6 @@
+; Copy this file to .user.ini on the server and fix the path if needed.
+; PHP will then log all errors to logs/php_errors.log (create the logs folder first).
+; After editing .user.ini, run: sudo systemctl reload php8.1-fpm
+
+log_errors = 1
+error_log = /var/www/securemyair-api/logs/php_errors.log

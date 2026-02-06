@@ -320,3 +320,111 @@ To manage and test the API with Swagger UI on your Droplet:
 
 The OpenAPI spec is in `swagger/openapi.yaml`; the UI is static HTML (Swagger UI loaded from CDN). No extra Nginx config is needed if the app root is the project folder.
 
+---
+
+## 12. Checking errors (troubleshooting)
+
+When some requests fail on the Droplet, check the following in order.
+
+### 12.1 SSH into the Droplet
+
+```bash
+ssh root@YOUR_DROPLET_IP
+# or: ssh deploy@YOUR_DROPLET_IP
+```
+
+### 12.2 Nginx error log (HTTP 502, 504, 404, connection refused)
+
+Nginx logs failed requests and upstream errors:
+
+```bash
+# Default path on Ubuntu
+sudo tail -100 /var/log/nginx/error.log
+
+# Follow live (re-run the failing request in another tab)
+sudo tail -f /var/log/nginx/error.log
+```
+
+Look for lines like `upstream timed out`, `connect() failed`, `FastCGI sent in stderr`, or the requested URL.
+
+### 12.3 PHP‑FPM error log (PHP crashes, timeouts)
+
+PHP‑FPM logs PHP fatal errors and timeouts:
+
+```bash
+# Common path (adjust 8.1 to your PHP version)
+sudo tail -100 /var/log/php8.1-fpm.log
+
+# Or generic location
+sudo tail -100 /var/log/php-fpm.log
+```
+
+To find the exact file:
+
+```bash
+sudo find /var/log -name "*php*fpm*" 2>/dev/null
+```
+
+### 12.4 PHP errors in the project (recommended: app log file)
+
+To capture all PHP errors (warnings, notices, fatals) in one file inside the project:
+
+1. **Create a log directory** (one-time):
+
+   ```bash
+   sudo mkdir -p /var/www/securemyair-api/logs
+   sudo chown www-data:www-data /var/www/securemyair-api/logs
+   sudo chmod 755 /var/www/securemyair-api/logs
+   ```
+
+2. **Set PHP to write errors there** – create `/var/www/securemyair-api/.user.ini` (same folder as `login.php`) with:
+
+   ```ini
+   log_errors = 1
+   error_log = /var/www/securemyair-api/logs/php_errors.log
+   ```
+
+   Then reload PHP‑FPM:
+
+   ```bash
+   sudo systemctl reload php8.1-fpm
+   ```
+
+   **Optional:** The repo has `.user.ini.example` – copy it to `.user.ini` on the server and set `error_log` to your project path. The `logs/` folder has a `.htaccess` that blocks web access (Apache). For **Nginx**, add inside your `server { }` block: `location /logs/ { deny all; }` so `/logs/` is not reachable in the browser.
+
+3. **Watch the log** when reproducing the failing request:
+
+   ```bash
+   sudo tail -f /var/www/securemyair-api/logs/php_errors.log
+   ```
+
+You’ll see the script path, message, and line number for each error.
+
+### 12.5 See which request failed (Nginx access log)
+
+To see the exact URL and status code (404, 500, etc.):
+
+```bash
+sudo tail -50 /var/log/nginx/access.log
+```
+
+Look at the last column (status code) and the request path.
+
+### 12.6 Quick checklist when “some requests” fail
+
+| Step | Command / action |
+|------|-------------------|
+| 1 | Reproduce the error (same URL and method from Swagger or browser). |
+| 2 | Run `sudo tail -f /var/log/nginx/error.log` and trigger the request again. |
+| 3 | Run `sudo tail -f /var/www/securemyair-api/logs/php_errors.log` if you set up 12.4. |
+| 4 | Check `access.log` for the same time to see HTTP status (e.g. 500). |
+| 5 | Fix the cause (e.g. missing DB column, wrong path, permission, or timeout). |
+
+### 12.7 Common causes
+
+- **502 Bad Gateway** – PHP‑FPM not running or Nginx wrong socket path: `sudo systemctl status php8.1-fpm`.
+- **504 Gateway Timeout** – Script runs too long; increase `fastcgi_read_timeout` in Nginx and `request_terminate_timeout` in PHP‑FPM pool config.
+- **500** – PHP fatal error or uncaught exception; see `php_errors.log` or PHP‑FPM log.
+- **401 / “Expired token”** – JWT expired or wrong; use a fresh token from `login.php`.
+- **Database errors** – Wrong `.env` / DB credentials or missing tables; message often appears in `php_errors.log` or in the API response body.
+
