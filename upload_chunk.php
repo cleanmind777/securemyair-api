@@ -20,9 +20,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $fileSize = intval($_POST["fileSize"]);
         $toLibrary = isset($_POST["to_library"]) ? intval($_POST["to_library"]) : 0;
         
-        $uploadDir = "img/chunks/";
-        if (!file_exists($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
+        $uploadDir = __DIR__ . "/img/chunks/";
+        if (!is_dir($uploadDir)) {
+            if (!@mkdir($uploadDir, 0775, true)) {
+                $arr["success"] = false;
+                $arr["error"] = "Upload directory not writable; server admin must create img/chunks and chown to web server user";
+                echo json_encode($arr);
+                exit;
+            }
+        }
+        if (!is_writable($uploadDir)) {
+            $arr["success"] = false;
+            $arr["error"] = "Upload directory not writable";
+            echo json_encode($arr);
+            exit;
         }
         
         $chunkFile = $uploadDir . $fileId . "_chunk_" . $chunkIndex;
@@ -42,7 +53,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $fileSize = intval($_GET["fileSize"]);
         $toLibrary = isset($_GET["to_library"]) ? intval($_GET["to_library"]) : 0;
         
-        $uploadDir = "img/chunks/";
+        $uploadDir = __DIR__ . "/img/chunks/";
         $chunkCount = 0;
         
         // Count available chunks
@@ -59,7 +70,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             // Generate unique filename
             $file_ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
             $unique_name = time() . "_" . uniqid() . "." . $file_ext;
-            $finalFile = "img/" . $unique_name;
+            $finalFile = __DIR__ . "/img/" . $unique_name;
             
             $handle = fopen($finalFile, 'wb');
             if ($handle) {

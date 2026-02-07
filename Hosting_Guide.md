@@ -234,7 +234,17 @@ sudo chown -R www-data:www-data /var/www/securemyair-api
 sudo chmod -R 755 /var/www/securemyair-api
 ```
 
-If you have specific upload folders, you can give them more permissive write rights if needed.
+**Upload directories (chunked upload / media):** The API writes to `img/` and `img/chunks/`. Create them and make them writable so `upload_chunk.php` does not hit “Permission denied”:
+
+```bash
+sudo mkdir -p /var/www/api.securemyair.com/img/chunks
+sudo chown -R www-data:www-data /var/www/api.securemyair.com/img
+sudo chmod -R 775 /var/www/api.securemyair.com/img
+```
+
+Use your actual app path (e.g. `/var/www/securemyair-api` or `/var/www/api.securemyair.com`) if different.
+
+If you have other upload folders, give them write rights the same way.
 
 ---
 
