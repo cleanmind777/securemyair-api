@@ -5,19 +5,8 @@ ini_set('post_max_size', '10M');
 ini_set('max_execution_time', 300);
 ini_set('memory_limit', '256M');
 
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Headers: access, Authorization');
-header('Access-Control-Allow-Methods: POST, GET');
-header('Content-Type: application/json');
-
-// Handle preflight requests
-if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
-
-include "mydbCon.php";
-include "auth.php";
+include 'headers.php';
+include 'auth.php';
 
 $arr = [];
 

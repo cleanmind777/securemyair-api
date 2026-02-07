@@ -7,19 +7,8 @@ ini_set('memory_limit', '256M');
 ini_set('file_uploads', '1');
 ini_set('max_file_uploads', '20');
 
-header('Access-Control-Allow-Origin: *');
+include 'headers.php';
 header('Access-Control-Allow-Credentials: true');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, access, X-Requested-With');
-header('Access-Control-Allow-Methods: POST, GET, DELETE, PUT, OPTIONS');
-header('Content-Type: application/json');
-
-// Handle preflight
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-  http_response_code(204);
-  exit;
-}
-
-include "mydbCon.php";
 
 $arr = [];
 
